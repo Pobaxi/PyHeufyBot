@@ -16,7 +16,9 @@ class ModuleSpawner(Module):
 
         def excecute(self, message):
             #TODO
-            if ()
-
-            else
-
+            if len(message.params) == 1:
+                self.bot.msg(message.repyTo, "ehhh somethings wrong chap")
+            else:
+                self.bot.msg(message.repyTo, "Hey something went right chap!")
+                # Do the actual work of timezone converting?
+        return True
