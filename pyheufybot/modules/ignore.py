@@ -1,10 +1,11 @@
 import os
-from pyheufybot.module_interface import Module, ModulePriority, ModuleType
+from pyheufybot.moduleinterface import Module, ModulePriority, ModuleType
 from pyheufybot.utils import fileutils
 
 class ModuleSpawner(Module):
     def __init__(self, bot):
-        self.bot = bot
+        super(ModuleSpawner, self).__init__(bot)
+
         self.name = "Ignore"
         self.trigger = "ignore|unignore"
         self.moduleType = ModuleType.COMMAND

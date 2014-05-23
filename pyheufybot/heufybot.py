@@ -8,7 +8,7 @@ from pyheufybot.channel import IRCChannel
 from pyheufybot.message import IRCMessage
 from pyheufybot.logger import log
 from pyheufybot.serverinfo import ModeType, ServerInfo
-from pyheufybot.module_interface import ModuleInterface
+from pyheufybot.moduleinterface import ModuleInterface
 
 class HeufyBot(irc.IRCClient):
     def __init__(self, factory):
@@ -74,7 +74,12 @@ class HeufyBot(irc.IRCClient):
 
     def privmsg(self, user, channel, msg):
         messageChannel = self.getChannel(channel)
-        messageUser = self.getUser(user[:user.index("!")])
+
+        if "!" in user:
+            messageUser = self.getUser(user[:user.index("!")])
+        else:
+            # User doesn't have a hostname
+            messageUser = IRCUser("{}!None@None".format(user))
 
         if not messageUser:
             messageUser = IRCUser(user)
@@ -84,17 +89,24 @@ class HeufyBot(irc.IRCClient):
 
     def action(self, user, channel, msg):
         messageChannel = self.getChannel(channel)
-        messageUser = self.getUser(user[:user.index("!")])
 
-        if not messageUser:
-            messageUser = IRCUser(user)
+        if "!" in user:
+            messageUser = self.getUser(user[:user.index("!")])
+        else:
+            # User doesn't have a hostname
+            messageUser = IRCUser("{}!None@None".format(user))
 
         message = IRCMessage("ACTION", messageUser, messageChannel, msg)
         self.moduleInterface.handleMessage(message)
 
     def noticed(self, user, channel, msg):
         messageChannel = self.getChannel(channel)
-        messageUser = self.getUser(user[:user.index("!")])
+
+        if "!" in user:
+            messageUser = self.getUser(user[:user.index("!")])
+        else:
+            # User doesn't have a hostname
+            messageUser = IRCUser("{}!None@None".format(user))
 
         if not messageUser:
             messageUser = IRCUser(user)

@@ -1,8 +1,9 @@
-from pyheufybot.module_interface import Module, ModulePriority, ModuleType
+from pyheufybot.moduleinterface import Module, ModulePriority, ModuleType
 
 class ModuleSpawner(Module):
     def __init__(self, bot):
-        self.bot = bot
+        super(ModuleSpawner, self).__init__(bot)
+
         self.name = "ModuleLoader"
         self.trigger = "load|unload|reload"
         self.moduleType = ModuleType.COMMAND
