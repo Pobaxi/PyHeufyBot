@@ -12,6 +12,7 @@ class Module(object):
         self.trigger = ""
         self.moduleType = ModuleType.PASSIVE
         self.modulePriority = ModulePriority.NORMAL
+        self.accessLevel = ModuleAccessLevel.ANYONE
         self.messageTypes = []
         self.helpText = "No help available for this module."
 
@@ -36,6 +37,7 @@ class ModuleInterface(object):
         self.modules = {}
         self.server = bot.factory.config.getSettingWithDefault("server", "irc.foo.bar")
         self.commandPrefix = bot.factory.config.getSettingWithDefault("commandPrefix", "!")
+        self.adminList = bot.factory.config.getSettingWithDefault("botAdmins", [])
         createDirs(os.path.join("data", self.server))
         self.dataPath = os.path.join("data", self.server)
 
@@ -60,14 +62,12 @@ class ModuleInterface(object):
             module = src.ModuleSpawner(self.bot)
 
             # Check if the module has all the required fields.
-            errorMsg = "Module \"{}\" is missing one or more of the required fields and cannot be loaded.".format(moduleName)
-            if not (hasattr(module, "name") and hasattr(module, "moduleType") and hasattr(module, "modulePriority") and hasattr(module, "messageTypes") and hasattr(module, "helpText")):
-                log("[{}] ERROR: {}".format(self.server, errorMsg), None)
-                return [False, errorMsg]
-                if module.moduleType == ModuleType.COMMAND:
-                    if not hasattr(module, "trigger"):
-                        log("[{}] ERROR: {}".format(self.server, errorMsg), None)
-                        return [False, errorMsg]
+            attributes = ["accessLevel", "helpText", "messageTypes", "modulePriority", "moduleType", "name", "trigger"]
+            for attr in attributes:
+                if not hasattr(module, attr):
+                    errorMsg = "Module \"{}\" is missing the required field \"{}\" and cannot be loaded.".format(moduleName, attr)
+                    log("[{}] ERROR: {}".format(self.server, errorMsg), None)
+                    return [False, errorMsg]
 
             # Module is valid and can be loaded.
             self.modules[moduleName] = module
@@ -141,6 +141,18 @@ class ModuleInterface(object):
                 match = re.search("^{}({})($| .*)".format(self.commandPrefix, module.trigger), message.messageText.lower(), re.IGNORECASE)
                 return True if match else False
 
+    def checkCommandAuthorization(self, module, message):
+        if module.accessLevel == ModuleAccessLevel.ANYONE:
+            return True
+
+        if module.accessLevel == ModuleAccessLevel.ADMINS:
+            for admin in self.adminList:
+                match = re.search(admin, message.user.getFullName(), re.IGNORECASE)
+                if match:
+                    return True
+
+        return False
+
     def handleMessage(self, message):
         try:
             noInterrupt = True
@@ -149,9 +161,13 @@ class ModuleInterface(object):
                     break
                 if self.shouldExecute(module, message):
                     if module.moduleType == ModuleType.COMMAND:
-                        # Strip the command prefix before passing
-                        newMessage = IRCMessage(message.messageType, message.user, message.channel, message.messageText[len(self.commandPrefix):])
-                        noInterrupt = module.execute(newMessage)
+                        # Check the access level
+                        if self.checkCommandAuthorization(module, message):
+                            # Strip the command prefix before passing
+                            newMessage = IRCMessage(message.messageType, message.user, message.channel, message.messageText[len(self.commandPrefix):])
+                            noInterrupt = module.execute(newMessage)
+                        else:
+                            self.bot.msg(message.replyTo, "You are not authorized to use the \"{}\" module!".format(module.name))
                     else:
                         noInterrupt = module.execute(message)
         except (Exception, SyntaxError, AttributeError):
@@ -176,3 +192,7 @@ class ModulePriority(object):
     NORMAL = 0
     BELOWNORMAL = -1
     LOW = -2
+
+class ModuleAccessLevel(Enum):
+    ANYONE = 1
+    ADMINS = 2
