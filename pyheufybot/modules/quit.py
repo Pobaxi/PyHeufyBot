@@ -1,7 +1,7 @@
 __author__ = 'Pobaxi'
 __contact__ = 'TODO'
 
-from pyheufybot.module_interface import Module, ModulePriority, ModuleType
+from pyheufybot.moduleinterface import Module, ModulePriority, ModuleType, ModuleAccessLevel
 
 
 class ModuleSpawner(Module):
@@ -9,6 +9,7 @@ class ModuleSpawner(Module):
         self.bot = bot
         self.name = "Quit"
         self.trigger ="quit"
+        self.accessLevel = ModuleAccessLevel.ANYONE
         self.moduleType= ModuleType.COMMAND
         self.modulePriority = ModulePriority.NORMAL
         self.messageTypes = ["PRIVMSG"]
