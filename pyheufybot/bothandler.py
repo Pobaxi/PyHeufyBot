@@ -1,5 +1,5 @@
-import os
-from twisted.internet import reactor
+import os, subprocess
+from twisted.internet import reactor, threads
 from heufybot import HeufyBotFactory
 from pyheufybot.logger import log
 from config import Config
@@ -7,6 +7,7 @@ from config import Config
 class BotHandler(object):
     def __init__(self):
         self.factories = {}
+        self.configs = []
         self.globalConfig = None
         self.configFile = None
 
@@ -26,6 +27,7 @@ class BotHandler(object):
             for filename in configList:
                 config = Config(filename, self.globalConfig.settings)
                 config.loadConfig()
+                self.configs.append(config)
                 self.startFactory(config)
         reactor.run()
 
@@ -58,12 +60,29 @@ class BotHandler(object):
                 del self.factories[server]
 
             if len(self.factories) == 0:
-                log("[BotHandler] --- No more open connections found; shutting down...", None)
+                log("[BotHandler] --- No more open connections found; stopping reactor...", None)
                 reactor.callLater(3.0, reactor.stop)
 
             return True
         else:
             return False
+
+    def quit(self, quitMessage=None, restart=False):
+        if not quitMessage:
+            if restart:
+                quitMessage = "Restarting..."
+            else:
+                quitMessage = "Shutting down..."
+        servers = self.factories.keys()
+        for factoryName in servers:
+            self.stopFactory(factoryName, quitMessage, False)
+        if restart:
+            threads.deferToThread(self.fullRestart)
+
+    def fullRestart(self):
+        log("[BotHandler] Restarting...", None)
+        reactor.callLater(3.0, subprocess.call("python app.py"))
+        # reactor.callLater(3.0, os.execl, sys.executable, sys.executable, *sys.argv)
 
     def getConfigList(self):
         root = os.path.join("config")
