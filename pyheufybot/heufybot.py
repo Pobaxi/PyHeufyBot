@@ -439,8 +439,11 @@ class HeufyBot(irc.IRCClient):
 class HeufyBotFactory(protocol.ReconnectingClientFactory):
     protocol = HeufyBot
     
-    def __init__(self, config):
+    def __init__(self, config, botHandler):
+        self.bot = None
         self.config = config
+        self.botHandler = botHandler
+        self.shouldReconnect = True
 
     def startedConnecting(self, connector):
         log("[{0}] --- Connecting to server {0}...".format(self.config.getSettingWithDefault("server", "irc.foo.bar")), None)
@@ -451,11 +454,15 @@ class HeufyBotFactory(protocol.ReconnectingClientFactory):
         return self.bot
 
     def clientConnectionLost(self, connector, reason):
+        self.bot.moduleInterface.unloadAllModules()
         server = self.config.getSettingWithDefault("server", "irc.foo.bar")
         log("[{}] --- Connection lost. (Reason: {})".format(server, reason), None)
-        protocol.ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
+        if self.shouldReconnect:
+            protocol.ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
+        else:
+            protocol.ClientFactory.clientConnectionLost(self, connector, reason)
 
     def clientConnectionFailed(self, connector, reason):
         server = self.config.getSettingWithDefault("server", "irc.foo.bar")
-        log("[{}] --- Connection failed. (Reason: {})".format(reason), None)
+        log("[{}] --- Connection failed. (Reason: {})".format(server, reason), None)
         protocol.ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)

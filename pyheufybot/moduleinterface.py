@@ -3,7 +3,6 @@ from pyheufybot.logger import log
 from pyheufybot.message import IRCMessage
 from pyheufybot.utils.fileutils import createDirs
 from enum import Enum
-from glob import glob
 
 class Module(object):
     def __init__(self, bot):
@@ -88,18 +87,12 @@ class ModuleInterface(object):
                 module = self.modules[moduleName]
                 module.onModuleUnloaded()
                 del self.modules[moduleName]
-                del sys.modules["pyheufybot.modules.{}".format(moduleName)]
-                for f in glob("pyheufybot/modules/{}.pyc".format(moduleName)):
-                    os.remove(f)
                 log("[{}] -<- Unloaded module \"{}\".".format(self.server, module.name), None)
                 return [True, module.name]
             except Exception as e:
                 errorMsg = "An exception occurred while unloading module \"{}\" ({}).".format(moduleName, e)
                 log("[{}] ERROR: {}".format(self.server, errorMsg), None)
                 del self.modules[moduleName]
-                del sys.modules["pyheufybot.modules.{}".format(moduleName)]
-                for f in glob("pyheufybot/modules/{}.pyc".format(moduleName)):
-                    os.remove(f)
                 return [False, errorMsg]
         else: 
             return [False, "Module \"{}\" is not loaded or doesn't exist.".format(moduleName)]
@@ -125,7 +118,8 @@ class ModuleInterface(object):
 
     def unloadAllModules(self):
         log("[{}] --- Unloading modules...".format(self.server), None)
-        for module in self.modules:
+        moduleNames = self.modules.keys()
+        for module in moduleNames:
             self.unloadModule(module)
 
     def shouldExecute(self, module, message):
@@ -193,6 +187,6 @@ class ModulePriority(object):
     BELOWNORMAL = -1
     LOW = -2
 
-class ModuleAccessLevel(Enum):
+class ModuleAccessLevel(object):
     ANYONE = 1
     ADMINS = 2
