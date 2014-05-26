@@ -1,8 +1,13 @@
+import datetime
+
 __author__ = 'Pobaxi'
 
 import re
+import pytz
+from pytz import timezone
 from pyheufybot.moduleinterface import Module, ModuleAccessLevel, ModulePriority, ModuleType
-from datetime import time, datetime, tzinfo
+from datetime import datetime
+
 
 class ModuleSpawner(Module):
     def __init__(self, bot):
@@ -28,19 +33,33 @@ class ModuleSpawner(Module):
             potentialFromTimeZone = message.params[2]
             potentialToTimeZone = message.params[3]
 
+            timezone(potentialFromTimeZone)
+
             if len(potentialFromTimeZone) == 3 or len(potentialFromTimeZone) == 4:
                 if len(potentialToTimeZone) == 3 or len(potentialToTimeZone) == 4:
                     if potentialTime:
                         self.bot.msg(message.replyTo, 'YAY looks like we are getting somewhere')
                         splitstring = potentialTime.string.split(':')
-                        greatTime = time(int(splitstring[0]), int(splitstring[1]), 0, 0, None)
+                        # for now this might do, but do I run into troubles down the line with this?
+                        initialTime = datetime(datetime.year,
+                                               datetime.month, datetime.day,
+                                               splitstring[0], splitstring[1], 0, 0, timezone(potentialFromTimeZone))
+
+
                         #todo figure out how to work with timezones now.... cause that seems to be the actual catch 22
+
                     else:
                         self.bot.msg(message.replyTo, message.params[1] + " doesn't seem to be a time in HH:MM format?")
                 else:
-                    self.bot.msg(message.replyTo, potentialFromTimeZone + "doesn't seem to be a known timezone shorthand.")
+                    self.bot.msg(message.replyTo, potentialFromTimeZone +
+                                               "is not a timezone abbreviation I understand. check this link:"
+                                               "http://en.wikipedia.org/wiki/List_of_time_zone_abbreviations "
+                                               "for a list of timezone abbreviations I know")
             else:
-                self.bot.msg(message.replyTo, potentialFromTimeZone + "doesn't seem to be a known timezone shorthand.")
+                self.bot.msg(message.replyTo, potentialFromTimeZone +
+                                               "is not a timezone abbreviation I understand. check this link:"
+                                               "http://en.wikipedia.org/wiki/List_of_time_zone_abbreviations "
+                                               "for a list of timezone abbreviations I know")
 
                 # Do the actual work of timezone converting?
                 # actual work:
