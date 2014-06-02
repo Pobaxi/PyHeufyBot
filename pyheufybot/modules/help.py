@@ -1,5 +1,5 @@
 import re
-from pyheufybot.moduleinterface import Module, ModuleAccessLevel, ModulePriority, ModuleType
+from pyheufybot.modulehandler import Module, ModuleAccessLevel, ModulePriority, ModuleType
 
 class ModuleSpawner(Module):
     def __init__(self, bot):
@@ -19,7 +19,7 @@ class ModuleSpawner(Module):
             helpPrefix = "Loaded command/trigger modules:" if message.params[0] .lower() == "help" else "Loaded modules:"
             loadedModules = []
 
-            for module in self.bot.moduleInterface.modules.values():
+            for module in self.bot.moduleHandler.modules.values():
                 if module.moduleType != ModuleType.PASSIVE or (module.moduleType == ModuleType.PASSIVE and includePassive):
                     loadedModules.append(module.name)
 
@@ -27,7 +27,7 @@ class ModuleSpawner(Module):
             self.bot.msg(message.replyTo, "{} {}".format(helpPrefix, ", ".join(loadedModules)))
         elif message.params[0].lower() == "help":
             helpMessage = " ".join(message.params[1:]).lower()
-            for module in self.bot.moduleInterface.modules.values():
+            for module in self.bot.moduleHandler.modules.values():
                 match = re.search(module.trigger.lower(), helpMessage.lower(), re.IGNORECASE) if module.moduleType == ModuleType.COMMAND else False
                 if helpMessage.lower() == module.name.lower() or match:
                     self.bot.msg(message.replyTo, module.getHelp(helpMessage))
